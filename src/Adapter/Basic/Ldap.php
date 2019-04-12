@@ -61,6 +61,16 @@ class Ldap extends AbstractBasic
     }
 
     /**
+     * Setup.
+     */
+    public function setup(): bool
+    {
+        $this->ldap->connect();
+
+        return true;
+    }
+
+    /**
      * Set options.
      *
      * @param iterable $config
@@ -98,7 +108,6 @@ class Ldap extends AbstractBasic
      */
     public function plainAuth(string $username, string $password): bool
     {
-        $this->ldap->connect();
         $resource = $this->ldap->getResource();
 
         $esc_username = ldap_escape($username);

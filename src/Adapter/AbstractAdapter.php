@@ -44,6 +44,16 @@ abstract class AbstractAdapter implements AdapterInterface
     protected $identity_attribute = 'uid';
 
     /**
+     * Setup.
+     *
+     * @return bool
+     */
+    public function setup(): bool
+    {
+        return true;
+    }
+
+    /**
      * Get attribute sync cache.
      *
      * @return int

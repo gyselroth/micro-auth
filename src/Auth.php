@@ -176,6 +176,8 @@ class Auth
         $result = false;
 
         foreach ($this->adapter as $name => $adapter) {
+            $adapter->setup();
+
             try {
                 if ($adapter->authenticate()) {
                     $this->createIdentity($adapter);

@@ -14,6 +14,13 @@ namespace Micro\Auth\Adapter;
 interface AdapterInterface
 {
     /**
+     * Setup.
+     *
+     * @return bool
+     */
+    public function setup(): bool;
+
+    /**
      * Get attribute sync cache.
      *
      * @return int
