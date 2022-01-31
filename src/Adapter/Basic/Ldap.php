@@ -249,7 +249,7 @@ class Ldap extends AbstractBasic
     public function getAttributes(IdentityInterface $identity): array
     {
         $search = array_column($this->map, 'attr');
-        $filter = htmlspecialchars_decode(sprintf($this->identity_attribute.'=%s)', $identity->getIdentifier()));
+        $filter = htmlspecialchars_decode(sprintf($this->account_filter, $identity->getIdentifier()));
 
         $this->logger->debug("fetch ldap object attributes with [$filter]", [
             'category' => get_class($this),
