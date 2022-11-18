@@ -240,7 +240,7 @@ class Oidc extends AbstractAdapter
                'category' => get_class($this),
             ]);
 
-            return $attribtues;
+            return $attributes;
         }
 
         $this->logger->error('failed verify oauth2 access token via authorization server, received status ['.$code.']', [
