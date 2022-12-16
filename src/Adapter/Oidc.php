@@ -45,6 +45,13 @@ class Oidc extends AbstractAdapter
     protected $logger;
 
     /**
+     * Access token.
+     *
+     * @var string
+     */
+    private $access_token;
+
+    /**
      * Init adapter.
      *
      * @param iterable $config
@@ -239,6 +246,7 @@ class Oidc extends AbstractAdapter
             $this->logger->debug('successfully verified oauth2 access token via authorization server', [
                'category' => get_class($this),
             ]);
+            $this->access_token = $token;
 
             return $attributes;
         }
