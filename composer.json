@@ -21,7 +21,8 @@
         "psr/log": "1.*",
         "dreamscapes/ldap-core": "^3.1",
         "psr/http-message": "*",
-        "psr/http-server-middleware": "*"
+        "psr/http-server-middleware": "*",
+        "thenetworg/oauth2-azure": "^2.0"
     },
     "suggest": {
         "ext-ldap": "required if you want to use LDAP",
