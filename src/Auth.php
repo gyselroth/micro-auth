@@ -83,7 +83,7 @@ class Auth
                 case 'attribute_map_class':
                     $this->{$option} = (string) $value;
 
-                break;
+                    break;
                 default:
                     throw new InvalidArgumentException('invalid option '.$option.' given');
             }
@@ -173,8 +173,6 @@ class Auth
      */
     public function requireOne(): bool
     {
-        $result = false;
-
         foreach ($this->adapter as $name => $adapter) {
             try {
                 if ($adapter->authenticate()) {

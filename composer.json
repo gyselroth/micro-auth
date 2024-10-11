@@ -18,7 +18,8 @@
     },
     "require": {
         "php": ">=7.1",
-        "psr/log": "1.*"
+        "psr/log": "1.*",
+        "thenetworg/oauth2-azure": "^2.0"
     },
     "suggest": {
         "ext-ldap": "required if you want to use LDAP",
