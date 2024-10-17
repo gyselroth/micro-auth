@@ -31,6 +31,20 @@ class Oidc extends AbstractAdapter
     protected $provider_url = 'https://oidc.example.org';
 
     /**
+     * ClientId.
+     *
+     * @var string
+     */
+    protected $client_id = '';
+
+    /**
+     * Default endpoint version.
+     *
+     * @var string
+     */
+    protected $default_end_point_version = '2.0';
+
+    /**
      * Token validation endpoint (rfc7662).
      *
      * @var string
@@ -78,10 +92,12 @@ class Oidc extends AbstractAdapter
             switch ($option) {
                 case 'provider_url':
                 case 'token_validation_url':
+                case 'client_id':
+                case 'default_end_point_version':
                     $this->{$option} = (string) $value;
                     unset($config[$option]);
 
-                break;
+                    break;
             }
         }
 
@@ -107,15 +123,15 @@ class Oidc extends AbstractAdapter
 
         if ('Bearer' === $parts[0]) {
             $this->logger->debug('found http bearer authorization header', [
-                    'category' => get_class($this),
-                ]);
+                'category' => get_class($this),
+            ]);
 
             return $this->verifyToken($parts[1]);
         }
 
         $this->logger->debug('http authorization header contains no bearer string or invalid authentication string', [
-                    'category' => get_class($this),
-                ]);
+            'category' => get_class($this),
+        ]);
 
         return null;
     }
@@ -143,8 +159,8 @@ class Oidc extends AbstractAdapter
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
         $this->logger->debug('fetch openid-connect discovery document from ['.$url.']', [
-                'category' => get_class($this),
-            ]);
+            'category' => get_class($this),
+        ]);
 
         $result = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -153,9 +169,9 @@ class Oidc extends AbstractAdapter
         if (200 === $code) {
             $discovery = json_decode($result, true);
             $this->logger->debug('received openid-connect discovery document from ['.$url.']', [
-                    'category' => get_class($this),
-                    'discovery' => $discovery,
-                ]);
+                'category' => get_class($this),
+                'discovery' => $discovery,
+            ]);
 
             if (true === $apc) {
                 apc_store($this->provider_url, $discovery);
@@ -165,8 +181,8 @@ class Oidc extends AbstractAdapter
         }
 
         $this->logger->error('failed to receive openid-connect discovery document from ['.$url.'], request ended with status ['.$code.']', [
-                    'category' => get_class($this),
-                ]);
+            'category' => get_class($this),
+        ]);
 
         throw new OidcException\DiscoveryNotFound('failed to get openid-connect discovery document');
     }
@@ -182,7 +198,7 @@ class Oidc extends AbstractAdapter
         }
 
         $this->logger->debug('fetch user attributes from userinfo_endpoint ['.$discovery['userinfo_endpoint'].']', [
-           'category' => get_class($this),
+            'category' => get_class($this),
         ]);
 
         $url = $discovery['userinfo_endpoint'].'?access_token='.$this->access_token;
@@ -197,14 +213,14 @@ class Oidc extends AbstractAdapter
         if (200 === $code) {
             $attributes = json_decode($result, true);
             $this->logger->debug('successfully requested user attributes from userinfo_endpoint', [
-               'category' => get_class($this),
+                'category' => get_class($this),
             ]);
 
             return $attributes;
         }
         $this->logger->error('failed requesting user attributes from userinfo_endpoint, status code ['.$code.']', [
-               'category' => get_class($this),
-            ]);
+            'category' => get_class($this),
+        ]);
 
         throw new OidcException\UserInfoRequestFailed('failed requesting user attribute from userinfo_endpoint');
     }
@@ -214,12 +230,36 @@ class Oidc extends AbstractAdapter
      */
     protected function verifyToken(string $token): ?array
     {
+        $tks = explode('.', $token);
+
         if ($this->token_validation_url) {
             $this->logger->debug('validate oauth2 token via rfc7662 token validation endpoint ['.$this->token_validation_url.']', [
-               'category' => get_class($this),
+                'category' => get_class($this),
             ]);
 
             $url = str_replace('{token}', $token, $this->token_validation_url);
+        } elseif (3 == count($tks) && !empty($tks[2])) {
+            $this->logger->debug('validate jwt token', [
+                'category' => get_class($this),
+            ]);
+
+            try {
+                $claims = (new \TheNetworg\OAuth2\Client\Provider\Azure([
+                    'clientId' => $this->client_id,
+                    'defaultEndPointVersion' => $this->default_end_point_version
+                ]))->validateAccessToken($token);
+            } catch (\Exception $exception) {
+                $this->logger->error('cannot get claims of accessToken', [
+                    'category' => get_class($this),
+                    'exception' => $exception
+                ]);
+
+                throw new OidcException\InvalidAccessToken('failed to verify jwt token via authorization server');
+            }
+
+            $this->access_token = $token;
+
+            return $claims;
         } else {
             $discovery = $this->getDiscoveryDocument();
             if (!(isset($discovery['userinfo_endpoint']))) {
@@ -227,7 +267,7 @@ class Oidc extends AbstractAdapter
             }
 
             $this->logger->debug('validate token via openid-connect userinfo_endpoint ['.$discovery['userinfo_endpoint'].']', [
-               'category' => get_class($this),
+                'category' => get_class($this),
             ]);
 
             $url = $discovery['userinfo_endpoint'].'?access_token='.$token;
@@ -239,12 +279,11 @@ class Oidc extends AbstractAdapter
         $result = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        $response = json_decode($result, true);
+        $attributes = json_decode($result, true);
 
         if (200 === $code) {
-            $attributes = json_decode($result, true);
             $this->logger->debug('successfully verified oauth2 access token via authorization server', [
-               'category' => get_class($this),
+                'category' => get_class($this),
             ]);
             $this->access_token = $token;
 
@@ -252,8 +291,8 @@ class Oidc extends AbstractAdapter
         }
 
         $this->logger->error('failed verify oauth2 access token via authorization server, received status ['.$code.']', [
-               'category' => get_class($this),
-            ]);
+            'category' => get_class($this),
+        ]);
 
         throw new OidcException\InvalidAccessToken('failed verify oauth2 access token via authorization server');
     }
