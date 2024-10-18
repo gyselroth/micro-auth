@@ -22,7 +22,7 @@ class OidcAzure extends AbstractAdapter
      *
      * @var string
      */
-    protected $tenant = '';
+    protected $tenant = 'common';
 
     /**
      * ClientId.
