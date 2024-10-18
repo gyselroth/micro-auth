@@ -37,20 +37,6 @@ class Oidc extends AbstractAdapter
     protected $token_validation_url;
 
     /**
-     * ClientId.
-     *
-     * @var string
-     */
-    protected $client_id = '';
-
-    /**
-     * Default endpoint version.
-     *
-     * @var string
-     */
-    protected $default_end_point_version = '2.0';
-
-    /**
      * Attributes.
      *
      * @var array
@@ -101,8 +87,6 @@ class Oidc extends AbstractAdapter
             switch ($option) {
                 case 'provider_url':
                 case 'token_validation_url':
-                case 'client_id':
-                case 'default_end_point_version':
                     $this->{$option} = (string) $value;
                     unset($config[$option]);
 
@@ -267,35 +251,12 @@ class Oidc extends AbstractAdapter
 
             $url = str_replace('{token}', $token, $this->token_validation_url);
         } elseif (3 == count($tks) && !empty($tks[2])) {
-            $this->logger->debug('validate jwt token', [
+            $this->logger->error('found jwt bearer in request. use OidcAzure adapter for jwt tokens.', [
                 'category' => get_class($this),
             ]);
 
-            try {
-                $claims = (new \TheNetworg\OAuth2\Client\Provider\Azure([
-                    'clientId' => $this->client_id,
-                    'defaultEndPointVersion' => $this->default_end_point_version
-                ]))->validateAccessToken($token);
-            } catch (\Exception $exception) {
-                $this->logger->error('cannot get claims of accessToken', [
-                    'category' => get_class($this),
-                    'exception' => $exception
-                ]);
-
-                throw new OidcException\InvalidAccessToken('failed to verify jwt token via authorization server');
-            }
-
-            if (!isset($claims[$this->identity_attribute])) {
-                throw new Exception\IdentityAttributeNotFound('identity attribute '.$this->identity_attribute.' not found in response');
-            }
-
-            $this->identifier = $claims[$this->identity_attribute];
-            $this->attributes = $claims;
-            $this->access_token = $token;
-
-            return true;
-        }
-        else {
+            return false;
+        } else {
             $discovery = $this->getDiscoveryDocument();
             if (!(isset($discovery['userinfo_endpoint']))) {
                 throw new OidcException\UserEndpointNotSet('userinfo_endpoint could not be determained');
