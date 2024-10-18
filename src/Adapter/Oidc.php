@@ -31,20 +31,6 @@ class Oidc extends AbstractAdapter
     protected $provider_url = 'https://oidc.example.org';
 
     /**
-     * ClientId.
-     *
-     * @var string
-     */
-    protected $client_id = '';
-
-    /**
-     * Default endpoint version.
-     *
-     * @var string
-     */
-    protected $default_end_point_version = '2.0';
-
-    /**
      * Token validation endpoint (rfc7662).
      *
      * @var string
@@ -92,8 +78,6 @@ class Oidc extends AbstractAdapter
             switch ($option) {
                 case 'provider_url':
                 case 'token_validation_url':
-                case 'client_id':
-                case 'default_end_point_version':
                     $this->{$option} = (string) $value;
                     unset($config[$option]);
 
@@ -239,27 +223,11 @@ class Oidc extends AbstractAdapter
 
             $url = str_replace('{token}', $token, $this->token_validation_url);
         } elseif (3 == count($tks) && !empty($tks[2])) {
-            $this->logger->debug('validate jwt token', [
+            $this->logger->error('found jwt bearer token in request. use OidcAzure adapter for jwt tokens.', [
                 'category' => get_class($this),
             ]);
 
-            try {
-                $claims = (new \TheNetworg\OAuth2\Client\Provider\Azure([
-                    'clientId' => $this->client_id,
-                    'defaultEndPointVersion' => $this->default_end_point_version
-                ]))->validateAccessToken($token);
-            } catch (\Exception $exception) {
-                $this->logger->error('cannot get claims of accessToken', [
-                    'category' => get_class($this),
-                    'exception' => $exception
-                ]);
-
-                throw new OidcException\InvalidAccessToken('failed to verify jwt token via authorization server');
-            }
-
-            $this->access_token = $token;
-
-            return $claims;
+            return null;
         } else {
             $discovery = $this->getDiscoveryDocument();
             if (!(isset($discovery['userinfo_endpoint']))) {
