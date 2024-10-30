@@ -22,21 +22,21 @@ class OidcAzure extends AbstractAdapter
      *
      * @var string
      */
-    protected $tenant = 'common';
+    protected $tenant;
 
     /**
      * ClientId.
      *
      * @var string
      */
-    protected $client_id = '';
+    protected $client_id;
 
     /**
      * Default endpoint version.
      *
      * @var string
      */
-    protected $default_end_point_version = '2.0';
+    protected $default_end_point_version;
 
     /**
      * Attributes.
@@ -156,12 +156,23 @@ class OidcAzure extends AbstractAdapter
             'category' => get_class($this),
         ]);
 
+        $options = [];
+
+        if (isset($this->tenant)) {
+            $options['tenant'] = $this->tenant;
+        }
+
+        if (isset($this->client_id)) {
+            $options['clientId'] = $this->client_id;
+        }
+
+        if (isset($this->default_end_point_version)) {
+            $options['defaultEndPointVersion'] = $this->default_end_point_version;
+        }
+
         try {
-            $claims = (new \TheNetworg\OAuth2\Client\Provider\Azure([
-                'tenant' => $this->tenant,
-                'clientId' => $this->client_id,
-                'defaultEndPointVersion' => $this->default_end_point_version
-            ]))->validateAccessToken($token);
+            $claims = (new \TheNetworg\OAuth2\Client\Provider\Azure($options))
+                ->validateAccessToken($token);
         } catch (\Exception $exception) {
             $this->logger->error('cannot get claims of accessToken', [
                 'category' => get_class($this),
