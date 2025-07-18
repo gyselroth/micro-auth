@@ -108,6 +108,24 @@ class OidcAzure extends AbstractAdapter
      */
     public function authenticate(): bool
     {
+        if (isset($_GET['access_token'])) {
+            $this->logger->warning('found access_token in query string, you should use a bearer token instead due security reasons https://tools.ietf.org/html/rfc6750#section-2.3', [
+                'category' => get_class($this),
+            ]);
+
+            $tks = explode('.', $_GET['access_token']);
+
+            if (3 == count($tks) && !empty($tks[2])) {
+                $this->logger->debug('found jwt access_token', [
+                    'category' => get_class($this),
+                ]);
+
+                return $this->verifyToken($_GET['access_token']);
+            }
+            $this->logger->debug('no jwt access_token provided', [
+                'category' => get_class($this),
+            ]);
+        }
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
             $parts = explode(' ', $_SERVER['HTTP_AUTHORIZATION']);
             $tks = explode('.', $parts[1]);
